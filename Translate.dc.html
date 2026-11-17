@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500&family=Noto+Serif+JP:wght@400&family=Noto+Sans+Runic&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#2a1a12;color:#3b2a1a;-webkit-font-smoothing:antialiased}a{color:#8a5a2a;text-decoration:none}a:hover{color:#b8762e}html,body{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}
+@keyframes flyX{0%{transform:translateX(0)}100%{transform:translateX(var(--dx))}}
+@keyframes flyY{0%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-90px) rotate(6deg)}100%{transform:translateY(0) rotate(-4deg)}}
+@keyframes glyphOut{0%{opacity:0}8%{opacity:1}42%{opacity:1}55%{opacity:0}100%{opacity:0}}
+@keyframes glyphIn{0%,45%{opacity:0}58%{opacity:1}90%{opacity:1}100%{opacity:0}}
+@keyframes glyphGlow{0%,35%,65%,100%{text-shadow:0 0 0 rgba(231,181,106,0)}50%{text-shadow:0 0 14px rgba(231,181,106,.95),0 0 30px rgba(255,220,150,.6)}}
+@keyframes coverOpen{0%{transform:rotateY(0)}100%{transform:rotateY(-180deg)}}
+@keyframes introFade{0%{opacity:1}100%{opacity:0;visibility:hidden}}
+@keyframes leftFade{0%{opacity:1}100%{opacity:0}}
+@keyframes ribbon{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
+@keyframes dust{0%{transform:translateY(0);opacity:0}20%{opacity:.7}100%{transform:translateY(-80px);opacity:0}}
+</style>
+</helmet>
+<div style="position:relative;overflow:hidden;min-height:100vh;font-family:'Noto Sans KR',sans-serif;background:#3a2418;display:flex;flex-direction:column;">
+  <div style="position:absolute;inset:clamp(8px,1.6vw,18px);border-radius:6px;background:linear-gradient(90deg, #e9dbbb 0%, #f4ead2 18%, #f6eedb 42%, #d9c8a4 49.2%, #b9a47e 50%, #d9c8a4 50.8%, #f6eedb 58%, #f4ead2 82%, #e9dbbb 100%);box-shadow:0 0 0 3px #c8b48c, 0 0 0 6px #e6d8b8, 0 0 0 9px #b8a27a, inset 0 0 80px rgba(120,85,45,.28);pointer-events:none;"></div>
+  <div style="position:absolute;inset:0;pointer-events:none;">{{ bg }}</div>
+  {{ intro }}
+  <div ref="{{ trackRef }}" onPointerDown="{{ onTrackDown }}" style="position:fixed;right:10px;top:12vh;bottom:12vh;width:22px;z-index:20;cursor:pointer;touch-action:none;">
+    <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:linear-gradient(to bottom,rgba(120,85,45,0),rgba(120,85,45,.45) 12%,rgba(120,85,45,.45) 88%,rgba(120,85,45,0));"></div>
+    <div ref="{{ thumbRef }}" style="position:absolute;left:50%;top:0;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;will-change:transform;">
+      <div style="width:100%;height:100%;transform:rotate(45deg);background:#e7b56a;box-shadow:0 0 10px 3px rgba(231,181,106,.55);" style-hover="background:#ffffff;box-shadow:0 0 14px 4px rgba(255,255,255,.6);"></div>
+    </div>
+  </div>
+  <header style="position:relative;z-index:1;pointer-events:none;max-width:1080px;width:100%;box-sizing:border-box;margin:0 auto;padding:32px clamp(28px,5vw,56px);display:flex;justify-content:space-between;align-items:center;gap:16px;">
+    <a href="김진혁 홈페이지.dc.html" style="pointer-events:auto;font-family:'Nanum Myeongjo',serif;font-weight:700;font-size:18px;letter-spacing:.08em;color:#3b2a1a;">Fantasy library</a>
+  </header>
+  <main style="position:relative;z-index:1;pointer-events:none;flex:1;max-width:1080px;width:100%;box-sizing:border-box;margin:0 auto;padding:calc(clamp(80px,16vh,160px) + 40px) clamp(20px,5vw,48px) clamp(80px,16vh,160px);text-align:center;">
+    <h1 style="margin:0;font-family:'Nanum Myeongjo',serif;font-weight:800;font-size:clamp(48px,10vw,104px);color:#2a1c10;text-shadow:0 0 18px rgba(231,181,106,.55), 0 0 40px rgba(246,238,219,.9);">번역</h1>
+    <p style="display:inline-block;margin:28px 0 0;padding:4px 14px;font-size:clamp(15px,2.2vw,18px);line-height:1.7;color:#5a4128;background:rgba(246,238,219,.75);border-radius:2px;">판타지 소설을 번역합니다.</p>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  trackRef = React.createRef();
+  thumbRef = React.createRef();
+  syncThumb = () => {
+    const t = this.trackRef.current, th = this.thumbRef.current;
+    if (!t || !th) return;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const p = max > 0 ? window.scrollY / max : 0;
+    th.style.transform = `translateY(${p * t.clientHeight}px)`;
+  };
+  scrollFromPointer = y => {
+    const r = this.trackRef.current.getBoundingClientRect();
+    const p = Math.min(1, Math.max(0, (y - r.top) / r.height));
+    window.scrollTo({ top: p * (document.documentElement.scrollHeight - window.innerHeight) });
+  };
+  onTrackDown = e => {
+    e.preventDefault();
+    this.scrollFromPointer(e.clientY);
+    const move = ev => this.scrollFromPointer(ev.clientY);
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+  componentWillUnmount() { window.removeEventListener('scroll', this.syncThumb); window.removeEventListener('resize', this.syncThumb); }
+  componentDidMount() {
+    window.addEventListener('scroll', this.syncThumb, { passive: true });
+    window.addEventListener('resize', this.syncThumb);
+    this.syncThumb();
+    this._introT = setTimeout(() => this.setState({ introDone: true }), 1900);
+    document.querySelectorAll('main > *').forEach((el, i) => {
+      Object.assign(el.style, { opacity: 0, transform: 'translateY(28px)', filter: 'blur(6px)' });
+      el.getBoundingClientRect();
+      Object.assign(el.style, {
+        transition: `opacity .9s ease ${1.1 + i * 0.2}s, transform .9s cubic-bezier(.2,.7,.2,1) ${1.1 + i * 0.2}s, filter .9s ease ${1.1 + i * 0.2}s`,
+        opacity: 1, transform: 'none', filter: 'none'
+      });
+    });
+  }
+  buildBg() {
+    const h = React.createElement;
+    let s = 31;
+    const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+    const out = [];
+    const pairs = [
+      ['Once upon a time, beyond the northern sea,', '옛날 옛적, 북쪽 바다 너머에', 'Nanum Myeongjo'],
+      ['昔々、竜が眠る山の麓に', '아주 먼 옛날, 용이 잠든 산기슭에', 'Noto Serif JP'],
+      ['ᚠᚢᚦᚨᚱᚲ ᚷᚹᚺ ᚾᛁᛃᛇ ᛈᛉᛊᛏ', '오래된 룬 문자가 새겨진 문', 'Noto Sans Runic'],
+      ['Il était une fois une bibliothèque oubliée', '잊힌 도서관이 하나 있었습니다', 'Nanum Myeongjo'],
+      ['Es war einmal ein Zauberer aus Glas', '유리로 만든 마법사가 살았습니다', 'Nanum Myeongjo'],
+      ['and every book whispered its own tongue.', '모든 책은 저마다의 언어로 속삭였습니다.', 'Nanum Myeongjo'],
+      ['星の言葉を知る者はもういない', '별의 언어를 아는 이는 이제 없습니다', 'Noto Serif JP'],
+      ['Había una vez un mapa sin final', '끝이 없는 지도가 있었습니다', 'Nanum Myeongjo']
+    ];
+    const ink = 'rgba(59,42,26,.28)';
+    const hl = i => e => document.querySelectorAll(`[data-pair="${i}"]`).forEach(el => { el.style.color = '#7a4a14'; el.style.textShadow = '0 0 12px rgba(231,181,106,.9)'; });
+    const un = i => e => document.querySelectorAll(`[data-pair="${i}"]`).forEach(el => { el.style.color = ink; el.style.textShadow = 'none'; });
+    const lineStyle = (left, top, font) => ({ position: 'absolute', left, top: `calc(max(160px, 24%) + (100% - max(160px, 24%) - 100px) * ${top / 9.2 / 7})`, width: '34%', fontFamily: `'${font}', serif`, fontSize: 'clamp(12px,1.35vw,17px)', lineHeight: 1.4, color: ink, pointerEvents: 'auto', cursor: 'default', transition: 'color .4s ease, text-shadow .4s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' });
+    pairs.forEach(([src, dst, font], i) => {
+      const top = i * 9.2;
+      out.push(h('div', { key: 'L' + i, 'data-pair': i, onMouseEnter: hl(i), onMouseLeave: un(i), style: lineStyle('7%', top, font) }, src));
+      out.push(h('div', { key: 'R' + i, 'data-pair': i, onMouseEnter: hl(i), onMouseLeave: un(i), style: { ...lineStyle('59%', top, 'Nanum Myeongjo'), textAlign: 'left' } }, dst));
+    });
+    // drop caps & page numbers
+    out.push(h('div', { key: 'dcL', style: { position: 'absolute', left: '7%', top: 'calc(max(160px, 24%) - 62px)', fontFamily: "'Nanum Myeongjo', serif", fontWeight: 800, fontSize: 52, color: 'rgba(138,90,42,.45)' } }, 'O'));
+    out.push(h('div', { key: 'dcR', style: { position: 'absolute', left: '59%', top: 'calc(max(160px, 24%) - 62px)', fontFamily: "'Nanum Myeongjo', serif", fontWeight: 800, fontSize: 52, color: 'rgba(138,90,42,.45)' } }, '옛'));
+    out.push(h('div', { key: 'pnL', style: { position: 'absolute', left: '7%', bottom: 34, fontFamily: "'Nanum Myeongjo', serif", fontSize: 14, color: 'rgba(59,42,26,.5)' } }, '— 214 —'));
+    out.push(h('div', { key: 'pnR', style: { position: 'absolute', right: '7%', bottom: 34, fontFamily: "'Nanum Myeongjo', serif", fontSize: 14, color: 'rgba(59,42,26,.5)' } }, '— 215 —'));
+    // flying glyphs: source letter crosses the gutter and turns into Korean
+    const glyphs = [['A', '가'], ['竜', '용'], ['ᚱ', '룬'], ['Ω', '오'], ['é', '에'], ['星', '별'], ['ß', '스'], ['M', '마'], ['ñ', '냐'], ['本', '책']];
+    const fontFor = c => /[ᚠ-ᛸ]/.test(c) ? 'Noto Sans Runic' : /[一-龯]/.test(c) ? 'Noto Serif JP' : 'Nanum Myeongjo';
+    glyphs.forEach(([a, b], i) => {
+      const dur = 9 + r() * 6, delay = -r() * dur, top = 20 + r() * 65, left = 8 + r() * 22, size = 22 + r() * 18;
+      out.push(h('span', { key: 'g' + i, style: { position: 'absolute', left: left + '%', top: top + '%', '--dx': (52 + r() * 6) + 'vw', animation: `flyX ${dur}s ${delay}s ease-in-out infinite` } },
+        h('span', { style: { position: 'relative', display: 'block', animation: `flyY ${dur}s ${delay}s ease-in-out infinite` } },
+          h('span', { style: { position: 'absolute', left: 0, top: 0, fontFamily: `'${fontFor(a)}', serif`, fontSize: size, color: '#5a3a1a', animation: `glyphOut ${dur}s ${delay}s linear infinite, glyphGlow ${dur}s ${delay}s linear infinite` } }, a),
+          h('span', { style: { position: 'absolute', left: 0, top: 0, fontFamily: "'Nanum Myeongjo', serif", fontWeight: 700, fontSize: size, color: '#7a4a14', animation: `glyphIn ${dur}s ${delay}s linear infinite, glyphGlow ${dur}s ${delay}s linear infinite` } }, b))));
+    });
+    // gold dust rising from the gutter
+    for (let i = 0; i < 18; i++) out.push(h('span', { key: 'd' + i, style: { position: 'absolute', left: `calc(50% + ${(r() - .5) * 60}px)`, top: 20 + r() * 70 + '%', width: 3, height: 3, borderRadius: '50%', background: '#e7b56a', boxShadow: '0 0 6px 2px rgba(231,181,106,.6)', opacity: 0, animation: `dust ${4 + r() * 4}s ${-r() * 8}s ease-out infinite` } }));
+    // ribbon bookmark
+    out.push(h('div', { key: 'rib', style: { position: 'absolute', right: '14%', top: 0, width: 22, transformOrigin: 'top center', animation: 'ribbon 6s ease-in-out infinite', pointerEvents: 'auto', cursor: 'grab', zIndex: 2 },
+      onMouseEnter: e => Object.assign(e.currentTarget.firstChild.style, { height: '210px', transition: 'height .5s cubic-bezier(.3,1.4,.5,1)' }),
+      onMouseLeave: e => Object.assign(e.currentTarget.firstChild.style, { height: '130px', transition: 'height .9s cubic-bezier(.3,1.6,.4,1)' }) },
+      h('div', { style: { width: '100%', height: '130px', background: 'linear-gradient(90deg,#7e1a24,#a8323e 50%,#7e1a24)', clipPath: 'polygon(0 0,100% 0,100% 100%,50% 88%,0 100%)', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.3))' } })));
+    // page curl (bottom-right) — peels more on hover
+    out.push(h('div', { key: 'curl', style: { position: 'absolute', right: 'clamp(8px,1.6vw,18px)', bottom: 'clamp(8px,1.6vw,18px)', width: 70, height: 70, pointerEvents: 'auto', cursor: 'pointer', zIndex: 2, transition: 'width .5s ease, height .5s ease' },
+      onMouseEnter: e => Object.assign(e.currentTarget.style, { width: '130px', height: '130px' }),
+      onMouseLeave: e => Object.assign(e.currentTarget.style, { width: '70px', height: '70px' }) },
+      h('span', { style: { position: 'absolute', inset: 0, background: '#3a2418', clipPath: 'polygon(100% 0,100% 100%,0 100%)' } }),
+      h('span', { style: { position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #f6eedb 0%, #e3d2ac 45%, #c8b088 50%, rgba(0,0,0,0) 50.5%)', clipPath: 'polygon(0 100%,100% 0,0 0)', transform: 'rotate(180deg)', filter: 'drop-shadow(-3px -3px 4px rgba(0,0,0,.25))' } })));
+    return out;
+  }
+  buildIntro() {
+    const h = React.createElement;
+    const leather = 'radial-gradient(120% 90% at 30% 30%, #6a3e26 0%, #4a2a1a 55%, #2e1a10 100%)';
+    const paper = 'linear-gradient(90deg, #b9a47e 0%, #d9c8a4 1.6%, #f6eedb 16%, #f4ead2 64%, #e9dbbb 100%)';
+    const paperL = 'linear-gradient(270deg, #b9a47e 0%, #d9c8a4 1.6%, #f6eedb 16%, #f4ead2 64%, #e9dbbb 100%)';
+    const rings = '0 0 0 3px #c8b48c, 0 0 0 6px #e6d8b8, 0 0 0 9px #b8a27a, inset 0 0 80px rgba(120,85,45,.28)';
+    const face = (bg, back, extra) => h('div', { style: { position: 'absolute', inset: 0, borderRadius: back ? '6px 0 0 6px' : '0 6px 6px 0', overflow: 'hidden', background: bg, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: back ? 'rotateY(180deg)' : 'none', ...extra } });
+    const leaf = (key, delay, dur, inset, front, back, children) => h('div', { key, style: { position: 'absolute', left: '50%', top: inset, bottom: inset, width: `calc(50% - ${inset})`, transformOrigin: 'left center', transformStyle: 'preserve-3d',
+      animation: `coverOpen ${dur}s ${delay}s cubic-bezier(.55,.05,.3,1) forwards` } }, front, back, children);
+    const coverFront = h('div', { style: { position: 'absolute', inset: 0, borderRadius: '0 6px 6px 0', overflow: 'hidden', background: leather, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', boxShadow: 'inset 0 0 60px rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' } },
+      h('div', { style: { position: 'absolute', inset: 22, border: '2px solid rgba(231,181,106,.6)', borderRadius: 4 } }),
+      h('div', { style: { position: 'absolute', inset: 32, border: '1px solid rgba(231,181,106,.35)', borderRadius: 2 } }),
+      h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 } },
+        h('div', { style: { width: 14, height: 14, transform: 'rotate(45deg)', background: '#e7b56a', boxShadow: '0 0 16px 4px rgba(231,181,106,.5)' } }),
+        h('div', { style: { fontFamily: "'Nanum Myeongjo', serif", fontSize: 'clamp(11px,1.2vw,14px)', letterSpacing: '.35em', color: 'rgba(231,181,106,.75)' } }, 'THE CHRONICLES OF'),
+        h('div', { style: { fontFamily: "'Nanum Myeongjo', serif", fontWeight: 800, fontSize: 'clamp(26px,4.4vw,52px)', lineHeight: 1.25, textAlign: 'center', color: '#e7b56a', textShadow: '0 0 18px rgba(231,181,106,.4)', padding: '0 40px' } }, '별을 삼킨 용'),
+        h('div', { style: { width: 90, height: 1, background: 'linear-gradient(90deg, rgba(231,181,106,0), #e7b56a, rgba(231,181,106,0))' } }),
+        h('div', { style: { fontFamily: "'Nanum Myeongjo', serif", fontSize: 'clamp(12px,1.3vw,15px)', letterSpacing: '.25em', color: 'rgba(231,181,106,.75)' } }, 'STARBOUND DRAGON · VOL. III')));
+    return h('div', { style: { position: 'fixed', inset: 0, zIndex: 50, background: '#3a2418', animation: 'introFade .45s 1.3s ease forwards' } },
+      h('div', { style: { position: 'absolute', inset: 'clamp(8px,1.6vw,18px)', perspective: '2200px' } },
+      h('div', { style: { position: 'absolute', left: 0, top: 0, bottom: 0, width: '50%', borderRadius: '6px 0 0 6px', background: paperL, boxShadow: rings, opacity: 0, animation: 'leftFade .35s .6s ease reverse forwards' } }),
+      h('div', { style: { position: 'absolute', left: '50%', top: 0, bottom: 0, width: '50%', borderRadius: '0 6px 6px 0', background: paper, boxShadow: rings } }),
+      leaf('p2', .6, .7, '2%', face(paper, false), face(paperL, true)),
+      leaf('p1', .45, .7, '1%', face(paper, false), face(paperL, true)),
+      leaf('cv', .1, .9, '0px', coverFront, face(paperL, true, { boxShadow: 'inset 0 0 40px rgba(120,85,45,.3)' }))));
+  }
+  renderVals() {
+    if (!this._bg) this._bg = this.buildBg();
+    if (!this._intro) this._intro = this.buildIntro();
+    const intro = this.state && this.state.introDone ? null : this._intro;
+    return { bg: this._bg, intro, trackRef: this.trackRef, thumbRef: this.thumbRef, onTrackDown: this.onTrackDown };
+  }
+}
+</script>
+</body>
+</html>
